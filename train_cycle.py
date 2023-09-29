@@ -22,7 +22,6 @@ args = config.parser.parse_args()
 base_path = args.path
 torch.set_num_threads(os.cpu_count() * 2)
 
-
 def cleanup_replay_buffer(validation_list):
     """Remove oldest files if replay buffer is full, and fills the replay buffer if not."""
     backup_path = os.path.join(base_path, 'self_play_backup')

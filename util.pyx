@@ -37,18 +37,34 @@ args = config.parser.parse_args()
 seed.seed_everything(args.seed)  
 path=args.path
 
-############### WRITE HYPERPARAMETER
-def hyperparameter(STOP_POINT, TEMPERATURE, SP_GAME_COUNT, LR, WD,  MOMENTUM, PROCESS_NUM, BATCH_SIZE, BUFFER_SIZE):
-    with open(path + '/hyperparameter.txt', mode='wt', encoding='utf-8') as f:
-        f.writelines('{}\n'.format(STOP_POINT))
-        f.writelines('{}\n'.format(TEMPERATURE))
-        f.writelines('{}\n'.format(SP_GAME_COUNT))
-        f.writelines('{}\n'.format(LR))
-        f.writelines('{}\n'.format(WD))
-        f.writelines('{}\n'.format(MOMENTUM))
-        f.writelines('{}\n'.format(PROCESS_NUM))
-        f.writelines('{}\n'.format(BATCH_SIZE))
-        f.writelines('{}\n'.format(BUFFER_SIZE))
+def hyperparameter(
+        stop_point, temperature, sp_game_count, 
+        lr, wd, momentum, process_num, 
+        batch_size, buffer_size):
+    """
+    Writes the provided hyperparameters to a file.
+
+    Args:
+        stop_point (int): The stopping point for the training.
+        temperature (float): The temperature parameter.
+        sp_game_count (int): The game count parameter for self-play.
+        lr (float): The learning rate.
+        wd (float): The weight decay.
+        momentum (float): The momentum.
+        process_num (int): The number of processes.
+        batch_size (int): The size of the batch.
+        buffer_size (int): The size of the buffer.
+    """
+    
+    hyperparameters = [
+        stop_point, temperature, sp_game_count,
+        lr, wd, momentum, process_num,
+        batch_size, buffer_size
+    ]
+
+    file_path = os.path.join(path, 'hyperparameter.txt')
+    with open(file_path, 'wt', encoding='utf-8') as file:
+        file.write('\n'.join(map(str, hyperparameters)))
 
 ############### LOAD HYPERPARAMETER
 def load_hyperparameter():
@@ -127,19 +143,32 @@ def boltzman(xs, temperature):
     return [x / sum(xs) for x in xs]
 
 
-################ ACTION OVERLAB RULE
-def overlab(action_history, p):
+def overlab(action_history, probabilities):
+    """
+    Adjust the given probabilities based on action history. 
+    All probabilities of actions in the history (except action 116) are set to zero.
+    Then, the action with the highest probability is selected.
+
+    Args:
+        action_history (list): List of actions taken in the past.
+        probabilities (list or numpy array): The original probabilities.
+
+    Returns:
+        numpy.array: Adjusted probabilities with one action selected.
+    """
     
-    if action_history!=[]:
-        for i in action_history:
-            if i !=116:
-                p[i] = 0
+    adjusted_probabilities = probabilities.copy()
+    for action in action_history:
+        if action != 116:
+            adjusted_probabilities[action] = 0
 
-    max_p = np.argmax(p)
-    scores = np.zeros(len(p))
-    scores[max_p] = 1
+    # Select the action with the highest adjusted probability
+    best_action = np.argmax(adjusted_probabilities)
+    scores = np.zeros_like(adjusted_probabilities)
+    scores[best_action] = 1
 
-    return scores 
+    return scores
+
 
 ################ LOAD VALIDATION DATA
 def train_data(idx): # 
@@ -166,129 +195,175 @@ def test_label():
         return self_load_data(path+f'/data/fold{args.fold}', f'test_label_fold{args.fold}.history')
 
 
-################ SOFTMAX
-def softmax(a) :
-    a = a.numpy()
-    c = np.max(a)
-    exp_a = np.exp(a-c)
-    sum_exp_a = np.sum(exp_a)
-    y = exp_a / sum_exp_a
-    #y = a / sum(a)
-    return y
+def softmax(tensor):
+    """
+    Compute the softmax of a tensor.
 
-################ LOAD CRITIC
-def Q(model, s, a, m, tm):
-    if tm==True: 
-        model.train()
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        model.to(device)
+    Args:
+        tensor (torch.Tensor): The input tensor.
 
-    else: model.eval()
+    Returns:
+        torch.Tensor: A tensor representing the softmax of the input tensor.
+    """
+    max_val = tensor.max()  # find the maximum value in the tensor
+    exp_tensor = torch.exp(tensor - max_val)  # exponentiate each element and stabilize
+    softmax_tensor = exp_tensor / exp_tensor.sum()  # normalize the exponentiated tensor
+    return softmax_tensor
 
-    return model.Q(s.float(), a.float(), m, tm).squeeze()
+def get_device():
+    """Returns the appropriate device (CPU or CUDA)"""
+    return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-################ LOAD ACTOR
-def PI(model, s, m, tm):
-    if tm==True: 
-        model.train()
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        model.to(device)
-    else: model.eval()
-    return model.pi(s, m, tm, softmax_dim=1)
+def Q(model, s, a, m, train_mode):
+    """
+    Load the critic's output for given inputs.
 
-################ LOAD TEMPERATURE
-def T(model, s, adj, tm):
-    if tm==True: 
-        model.train()
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        model.to(device)
-    else: model.eval()
+    Args:
+        model: The neural network model.
+        s: State tensor.
+        a: Action tensor.
+        m: Additional model-specific tensor.
+        train_mode: If True, sets model to training mode. Otherwise, evaluation mode.
+
+    Returns:
+        Tensor: Critic's output.
+    """
+    model = model.to(get_device())
+    model.train() if train_mode else model.eval()
+    return model.Q(s.float(), a.float(), m, train_mode).squeeze()
+
+def PI(model, s, m, train_mode):
+    """
+    Load the actor's output for given inputs.
+
+    Args:
+        model: The neural network model.
+        s: State tensor.
+        m: Additional model-specific tensor.
+        train_mode: If True, sets model to training mode. Otherwise, evaluation mode.
+
+    Returns:
+        Tensor: Actor's output.
+    """
+    model = model.to(get_device())
+    model.train() if train_mode else model.eval()
+    return model.pi(s, m, train_mode, softmax_dim=1)
+
+def T(model, s, adj, train_mode):
+    """
+    Load the temperature output for given inputs.
+
+    Args:
+        model: The neural network model.
+        s: State tensor.
+        adj: Adjacency tensor.
+        train_mode: If True, sets model to training mode. Otherwise, evaluation mode.
+
+    Returns:
+        Tensor: Temperature output.
+    """
+    model = model.to(get_device())
+    model.train() if train_mode else model.eval()
     return model.temp(s.float(), adj.float()).squeeze()
 
-################ LOAD CLASSIFIER
-def classifier():
-    return torch.load(path+f'/baseline/fold{args.fold}/checkpoint/{args.split}checkpoint.pt', map_location='cpu')
+def load_classifier():
+    """Load the classifier model from the specified path."""
+    return torch.load(f'{path}/baseline/fold{args.fold}/checkpoint/{args.split}checkpoint.pt', map_location='cpu')
 
-################ TARGET1, TARGET2 NETWORK UPDATE
-def target_network(model1, model2, target_model1, target_model2):
-    print('-----Target Network Change-----')
-    for target_param, param in zip(target_model1.parameters(), model1.parameters()):
-        target_param.data.copy_(param.data * args.target_soft_update_ratio + target_param.data * (1.0 - args.target_soft_update_ratio))
 
+def target_networks(source_model1, source_model2, target_model1, target_model2):
+    """
+    Perform a soft update on target networks using parameters from source networks.
+    
+    Args:
+        source_model1 (torch.nn.Module): First source model.
+        source_model2 (torch.nn.Module): Second source model.
+        target_model1 (torch.nn.Module): First target model to be updated.
+        target_model2 (torch.nn.Module): Second target model to be updated.
+    """
+    
+    print('----- Updating Target Networks -----')
+    
+    # Update target_model1 parameters based on source_model1
+    for target_param, source_param in zip(target_model1.parameters(), source_model1.parameters()):
+        update_value = source_param.data * args.target_soft_update_ratio 
+        target_param.data.copy_(update_value + target_param.data * (1.0 - args.target_soft_update_ratio))
+    
     torch.save(target_model1, args.dualnetwork_target_path)
     target_model1 = torch.load(args.dualnetwork_target_path, map_location=f'cuda:{args.cuda_device}')
-
-    for target_param, param in zip(target_model2.parameters(), model2.parameters()):
-        target_param.data.copy_(param.data * args.target_soft_update_ratio + target_param.data * (1.0 - args.target_soft_update_ratio))
-
+    
+    # Update target_model2 parameters based on source_model2
+    for target_param, source_param in zip(target_model2.parameters(), source_model2.parameters()):
+        update_value = source_param.data * args.target_soft_update_ratio 
+        target_param.data.copy_(update_value + target_param.data * (1.0 - args.target_soft_update_ratio))
+    
     torch.save(target_model2, args.dualnetwork_target2_path)
     target_model2 = torch.load(args.dualnetwork_target2_path, map_location=f'cuda:{args.cuda_device}')
 
-################ NETWORK LOSS SAVE
-def loss_info(allloss_train_pi, allloss_Q1, allloss_Q2, allloss_TEMP, iters):
-    dataframe_loss_pi = pd.DataFrame(allloss_train_pi)
-    data = pd.concat([dataframe_loss_pi], axis=1)
-    data.to_csv(path + f'/loss/dual_loss_{iters}_pi.csv', index = False, mode ='w')
-    dataframe_loss_v = pd.DataFrame(allloss_Q1)
-    data = pd.concat([dataframe_loss_v], axis=1)
-    data.to_csv(path + f'/loss/dual_loss_{iters}_q1.csv', index = False, mode ='w')
-    dataframe_loss = pd.DataFrame(allloss_Q2)
-    data = pd.concat([dataframe_loss], axis=1)
-    data.to_csv(path + f'/loss/dual_loss_{iters}_q2.csv', index = False, mode ='w')
-    dataframe_loss = pd.DataFrame(allloss_TEMP)
-    data = pd.concat([dataframe_loss], axis=1)
-    data.to_csv(path + f'/loss/dual_loss_{iters}_temp.csv', index = False, mode ='w')
 
-################ INIT ITERATION PERFORMANCE
+def save_loss_info(all_loss_train_pi, all_loss_q1, all_loss_q2, all_loss_temp, iteration):
+    """
+    Save the loss information to CSV files.
+    Args:
+        all_loss_train_pi (list): List containing the loss of the policy network.
+        all_loss_q1 (list): List containing the loss of the Q1 network.
+        all_loss_q2 (list): List containing the loss of the Q2 network.
+        all_loss_temp (list): List containing the temperature loss.
+        iteration (int): The current iteration number.
+    """
+
+    loss_types = {
+        'pi': all_loss_train_pi,
+        'q1': all_loss_q1,
+        'q2': all_loss_q2,
+        'temp': all_loss_temp
+    }
+
+    for loss_name, loss_values in loss_types.items():
+        file_path = os.path.join(path, f'loss/dual_loss_{iteration}_{loss_name}.csv')
+        
+        data_frame = pd.DataFrame(loss_values)
+        data_frame.to_csv(file_path, index=False, mode='w')
+
+
+
 def init_performance(validation_list, iters):
-    from multiprocessing import Pool, freeze_support
-
-    import evaluate_best_player_val_p
     freeze_support()
     torch.multiprocessing.set_start_method('spawn', force=True)
 
-    for subj in range(len(validation_list)):
-
-    ############### EPISODE SUCCES INFO
-
-    for subj in range(len(validation_list)):
-        if not os.path.exists(path + f'/terminal/val/val_succes_idx/{subj}.txt'):
-            with open(path + f'/terminal/val/val_succes_idx/{subj}.txt', mode='wt', encoding='utf-8') as f:
-                f.writelines(f'{0}')
-
+    # Initialize success information for each episode.
+    for subj in validation_list:
+        success_idx_file = os.path.join(path, f'terminal/val/val_success_idx/{subj}.txt')
+        
+        if not os.path.exists(success_idx_file):
+            with open(success_idx_file, mode='wt', encoding='utf-8') as f:
+                f.write('0')
+                
     try:
-        pool = Pool(args.num_process)
-        pool.starmap(evaluate_best_player_val_p.evaluate_best_player, validation_list)
+        with Pool(args.num_process) as pool:
+            # Evaluate the best player using multiprocessing.
+            pool.starmap(evaluate_best_player_val_p.evaluate_best_player, validation_list)
+            pool._cache.clear()  # Ensure all tasks are completed before moving forward.
     finally:
-        pool.close()
-        pool.join()
-        evaluate_best_player_val_p.confusion(-1, True) 
+        # Generate a confusion matrix after evaluating all players.
+        evaluate_best_player_val_p.confusion(-1, True)
 
-
-
-################ PLAY SELFPLAY
 def self_play(validation_list):
-    import self_play_best
-
-    ############### SELF-PLAY
     try:
-        pool = Pool(args.num_process)
-        pool.imap(self_play_best.self_play,validation_list)
-    finally:
-        pool.close()
-        pool.join()
+        with Pool(args.num_process) as pool:
+            # Using imap to apply self_play_best.self_play to each item in validation_list in parallel.
+            pool.imap(self_play_best.self_play, validation_list)
+            pool._cache.clear()  # Waiting for all the tasks to complete.
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
 
 ################ LOAD BUFFER DATA
 def replay_buffer_load(replay_buffer):
-    if replay_buffer==True:
-        with Pool(10) as pool:
-            self_data_append = [pool.apply_async(load_data, (args.backup_path, i)).get() for i in tqdm(range(len(os.listdir(path+'/self_play_backup'))), desc='Data load')]
-            pool.close()
-            pool.join()
-    else:
-        with Pool(10) as pool:
-            self_data_append = [pool.apply_async(load_data, (args.best_path, i)).get() for i in tqdm(range(len(os.listdir(path+'/self_play_best_data'))), desc='Data load')]
-            pool.close()
-            pool.join()
-        return self_data_append
-
+    load_path = args.backup_path if replay_buffer else args.best_path
+    directory = os.path.join(path, 'self_play_backup' if replay_buffer else 'self_play_best_data')
+    
+    with Pool(10) as pool:
+        self_data_append = [pool.apply_async(load_data, (load_path, i)).get() 
+                            for i in tqdm(range(len(os.listdir(directory))), desc='Data load')]
+    return self_data_append

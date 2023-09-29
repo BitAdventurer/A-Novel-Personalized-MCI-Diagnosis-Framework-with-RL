@@ -66,38 +66,70 @@ def hyperparameter(
     with open(file_path, 'wt', encoding='utf-8') as file:
         file.write('\n'.join(map(str, hyperparameters)))
 
-############### LOAD HYPERPARAMETER
 def load_hyperparameter():
-    with open(path+'/hyperparameter.txt', mode='rt', encoding='utf-8') as f:
-        lines = f.readlines()  
-        STOP_POINT = int(lines[0])
-        TEMPERATURE = float(lines[1])
-        SP_GAME_COUNT = int(lines[2])
-        LR = float(lines[3])
-        WD = float(lines[4])
-        MOMENTUM = float(lines[5])
-        SOFT_RATTIO = float(lines[6])
-        BATCH_SIZE = int(lines[7])
-        BUFFER_SIZE = int(lines[8])
-    return STOP_POINT, TEMPERATURE, SP_GAME_COUNT, LR, WD,  MOMENTUM, SOFT_RATTIO, BATCH_SIZE, BUFFER_SIZE
-    
-############### EVALUATE_NETWORK
-def soft_update(source, target, tau, tf): # init, Train model
-    for target_param, param in zip(target.state_dict().values(), source.state_dict().values()):
-        target_param.data.copy_(target_param.data * tau + param.data * (1.0 - tau))
-        if tf==True:
-            torch.save(target.cuda(), args.dualnetwork_model_init_path)
-            torch.save(target.cuda(), args.dualnetwork_best_path)
-        else:
-            torch.save(target.cuda(), args.dualnetwork_model_init2_path)
-            torch.save(target.cuda(), args.dualnetwork_best2_path)
+    """
+    Loads hyperparameters from a file and returns them as a tuple.
 
-############### EVALUATE_NETWORK
-def hard_update(source, target, tf): # init, model
-    if tf==True:
-        torch.save(target, args.dualnetwork_best_path)
-    else:
-        torch.save(target, args.dualnetwork_best2_path)
+    Returns:
+        tuple: A tuple containing the loaded hyperparameters:
+            - stop_point (int): The stopping point for the training.
+            - temperature (float): The temperature parameter.
+            - sp_game_count (int): The game count parameter for self-play.
+            - lr (float): The learning rate.
+            - wd (float): The weight decay.
+            - momentum (float): The momentum.
+            - soft_ratio (float): The soft ratio.
+            - batch_size (int): The size of the batch.
+            - buffer_size (int): The size of the buffer.
+    """
+    file_path = os.path.join(path, 'hyperparameter.txt')
+    
+    with open(file_path, 'rt', encoding='utf-8') as file:
+        lines = file.readlines()
+        
+    converters = [int, float, int, float, float, float, float, int, int]
+    hyperparameters = tuple(converter(line) for converter, line in zip(converters, lines))
+    
+    return hyperparameters
+
+def soft_update(source_model, target_model, tau, is_primary_model):
+    """
+    Performs a soft update on the target model's parameters based on the source model's parameters.
+    
+    Args:
+        source_model (nn.Module): The source model from which the parameters are copied.
+        target_model (nn.Module): The target model whose parameters are to be updated.
+        tau (float): The soft update mixing factor.
+        is_primary_model (bool): Flag indicating if the target model is the primary model.
+        
+    Returns:
+        None
+    """
+    for target_param, source_param in zip(target_model.state_dict().values(), source_model.state_dict().values()):
+        target_param.data.copy_(target_param.data * tau + source_param.data * (1.0 - tau))
+        
+    model_path = args.dualnetwork_model_init_path if is_primary_model else args.dualnetwork_model_init2_path
+    best_path = args.dualnetwork_best_path if is_primary_model else args.dualnetwork_best2_path
+    
+    target_model = target_model.cuda()
+    torch.save(target_model, model_path)
+    torch.save(target_model, best_path)
+
+
+def hard_update(source_model, target_model, is_primary_model):
+    """
+    Performs a hard update by directly copying the parameters from the source model to the target model.
+    
+    Args:
+        source_model (nn.Module): The source model from which the parameters are copied.
+        target_model (nn.Module): The target model whose parameters are to be updated.
+        is_primary_model (bool): Flag indicating if the target model is the primary model.
+        
+    Returns:
+        None
+    """
+    best_path = args.dualnetwork_best_path if is_primary_model else args.dualnetwork_best2_path
+    torch.save(target_model, best_path)
 
 ############### TRAIN NETWORK
 def load_data(x,y):

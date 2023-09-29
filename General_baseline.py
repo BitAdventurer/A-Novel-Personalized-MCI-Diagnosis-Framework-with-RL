@@ -240,12 +240,12 @@ class Trainer:
         total_samples = np.sum(matrix)
         weights = [sum(row) for row in matrix]
 
-        weighted_sensitivity = sum([sens * weight for sens, weight in zip(sensitivities, weights)]) / total_samples
-        weighted_specificity = sum([spec * weight for spec, weight in zip(specificities, weights)]) / total_samples
-        weighted_precision = sum([prec * weight for prec, weight in zip(precisions, weights)]) / total_samples
-        weighted_f1 = sum([f1 * weight for f1, weight in zip(f1_scores, weights)]) / total_samples
+        sensitivity = sum([sens * weight for sens, weight in zip(sensitivities, weights)]) / total_samples
+        specificity = sum([spec * weight for spec, weight in zip(specificities, weights)]) / total_samples
+        precision = sum([prec * weight for prec, weight in zip(precisions, weights)]) / total_samples
+        f1 = sum([f1 * weight for f1, weight in zip(f1_scores, weights)]) / total_samples
 
-        return weighted_sensitivity, weighted_specificity, weighted_precision, weighted_f1
+        return sensitivity, specificity, precision, f1
 
 
 

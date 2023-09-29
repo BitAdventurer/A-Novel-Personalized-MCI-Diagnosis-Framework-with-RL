@@ -43,144 +43,152 @@ warnings.filterwarnings("ignore")
 torch.autograd.set_detect_anomaly(False) 
 torch.cuda.set_device(args.cuda_device)
 
-############### NN TRAIN START
 def train_network(model, history, target_model, model2, target_model2, iters):
-    running_loss_pi, running_loss_q1, running_loss_q2 = 0.0, 0.0, 0.0
-
-    ############### BATCH DATA 
+    """
+    Trains the provided model using data from history.
+    
+    :param model: The main model to be trained.
+    :param history: The data used for training the model.
+    :param target_model: The target model used during training.
+    :param model2: An additional model involved in training.
+    :param target_model2: The target of the additional model involved in training.
+    :param iters: The number of iterations to train for.
+    :return: Tuple containing the losses and other return values from the training process.
+    """
+    # Constants
+    TENSOR_DIM = 116
+    CUDA_DEVICE = 'cuda:0'
+    
+    # Initialize running losses
+    loss_pi, loss_q1, loss_q2 = 0.0, 0.0, 0.0
+    
+    # Process Batch Data
     for batch_idx, (state, action, reward, state_prime, done, adj, adj_prime) in enumerate(history):
-
-        ############### TO TENSOR
-        state, reward, state_prime, adj, adj_prime = torch.tensor(state, device=torch.device('cuda:0')),\
-                                    torch.tensor(reward, device=torch.device('cuda:0')),\
-                                    torch.tensor(state_prime, device=torch.device('cuda:0')),\
-                                    torch.tensor(adj, device=torch.device('cuda:0')),\
-                                    torch.tensor(adj_prime, device=torch.device('cuda:0')),\
-
-        ############### RESHAPE 
-        state, adj = state.reshape(-1, 116, 116), adj.reshape(-1, 116, 116)
-        state_prime, adj_prime = state_prime.reshape(-1, 116, 116), adj_prime.reshape(-1, 116, 116)
-
-        ############### PUT DATA
+        
+        # Convert to tensor and reshape
+        state, reward, state_prime, adj, adj_prime = map(
+            lambda x: torch.tensor(x, device=torch.device(CUDA_DEVICE)).reshape(-1, TENSOR_DIM, TENSOR_DIM),
+            [state, reward, state_prime, adj, adj_prime]
+        )
+        
+        # Put data into model
         model.put_data([state, action, reward, state_prime, done, adj, adj_prime])
-
-    ############### TRAIN
-    loss_pi, loss_q1, loss_q2, loss_temp, _, esv = model.train_net(model, target_model, model2, target_model2, iters) # RETURN : LOSS
-
-    ############### SUMMATION LOSS
-    running_loss_pi += loss_pi/(batch_idx+1)
-    running_loss_q1 += loss_q1/(batch_idx+1)
-
-    ############### BATCH LOSS
+    
+    # Perform Training and Compute Loss
+    loss_pi, loss_q1, _, loss_temp, _, esv = model.train_net(
+        model, target_model, model2, target_model2, iters
+    )
+    
+    # Return Losses and Other Values
     return loss_pi, loss_q1, loss_temp, _, esv
+
 
 ############### MAIN
 def train_main(True_result, iters):
+    """
+    Main function to handle the training process.
+    
+    :param true_result: None
+    :param iters: Number of iterations
+    """
     # initialize the early_stopping object
     early_stopping = early_stop_dual.EarlyStopping(patience=args.patience, verbose=True, delta=0.0)
 
     allloss_train_pi, allloss_Q1 = [], []
     self_data_append, history, allloss_Q2, allloss_TEMP = [], [], [], []
 
-    ############### SELFPLAY DATA LOAD *REPLAY BUFFER
+    def load_data(path):
+        with Pool(10) as pool:
+            data = [pool.apply_async(util.load_data, (path, i)).get() for i in tqdm(range(len(os.listdir(path))), desc='Episode load')]
+        return data
+
+    # Load Data
     if args.replay_buffer:
-        with Pool(10) as pool:
-            self_data_append = [pool.apply_async(util.load_data, (backup_path, i)).get() for i in tqdm(range(len(os.listdir(path+'/self_play_backup'))), desc='Episode load')]
-            pool.close()
-            pool.join()
+        self_data_append = load_data(path + '/self_play_backup')
     else:
-        with Pool(10) as pool:
-            self_data_append = [pool.apply_async(util.load_data, (best_path, i)).get() for i in tqdm(range(len(os.listdir(path+'/self_play_best_data'))), desc='Episode load')]
-            pool.close()
-            pool.join()
-
+        self_data_append = load_data(path + '/self_play_best_data')
+        
     ############### SAMPLING
-    # s, a, r, s_prime, done, adj, adj_prime
-    STOP_POINT, _, _, _, _,  _, _, _, _ = util.load_hyperparameter()
+    STOP_POINT, *_ = util.load_hyperparameter()
+    history = []  # It's assumed that history is a list. Modify as needed if it's another data structure.
+    
+    def sample_and_extend(data, sample_size):
+        sampled_histories = [[] for _ in range(sample_size)]
+        for idx in range(sample_size):
+            sampled_histories[idx].append(data[np.random.randint(len(data))])
+        return [item for sublist in sampled_histories for item in sublist]  # Flatten and return
 
-    for j in tqdm(range(len(self_data_append)), desc='Data sampling'):
-        if len(self_data_append[j])>args.window:
+    for data in tqdm(self_data_append, desc='Data sampling'):
+        sample_size = args.sampling_size if len(data) > args.window else args.sampling_size // 2
+        window_start = max(0, len(data) - args.window)  # This ensures that the sampling window doesn't go negative
+        sampled_data = data[window_start:]
+        history.extend(sample_and_extend(sampled_data, sample_size))
 
-            for z in range(args.sampling_size):
-                globals()['history{}'.format(z)] = []
-
-            for history_idx in range(args.sampling_size):
-                globals()['history{}'.format(history_idx)].append(self_data_append[j][np.random.randint(len(self_data_append[j])-args.window, len(self_data_append[j]))])
-                
-
-            for history_idx2 in range(args.sampling_size):
-                history.extend(globals()['history{}'.format(history_idx2)] )
-
-        else:
-            for z in range(args.sampling_size//2):
-                globals()['history{}'.format(z)] = []
-
-            for history_idx in range(args.sampling_size//2):
-                globals()['history{}'.format(history_idx)].append(self_data_append[j][np.random.randint(0, len(self_data_append[j]))])
-
-            for history_idx2 in range(args.sampling_size//2):
-                history.extend(globals()['history{}'.format(history_idx2)] )
-
-    ############### MODEL LOAD
-    model1 = torch.load(dualnetwork_best_path, map_location=f'cuda:{args.cuda_device}')
-    target_model1 = torch.load(dualnetwork_target_path, map_location=f'cuda:{args.cuda_device}')
-
-    model2=torch.load(dualnetwork_best2_path, map_location=f'cuda:{args.cuda_device}')
-    target_model2 = torch.load(dualnetwork_target2_path, map_location=f'cuda:{args.cuda_device}')
+    def load_model(path, cuda_device):
+        try:
+            model = torch.load(path, map_location=f'cuda:{cuda_device}')
+            return model
+        except Exception as e:
+            print(f"Error loading the model from path {path}: {str(e)}")
+            return None
+            
+    model1 = load_model(dualnetwork_best_path, args.cuda_device)
+    target_model1 = load_model(dualnetwork_target_path, args.cuda_device)
+    model2 = load_model(dualnetwork_best2_path, args.cuda_device)
+    target_model2 = load_model(dualnetwork_target2_path, args.cuda_device)
 
 
-    ############### TRAIN EPOCHS
-    for n_epi in tqdm(range(nbepochs), desc='Train process', leave=False): 
-
-
-        ############### TRAIN LOSS
-        PI, loss_Q1, loss_TEMP, _, esv = train_network(model=model1, history=history, target_model=target_model1, model2=model2, target_model2=target_model2, iters=iters)
+def training_process(nbepochs, model1, history, target_model1, model2, target_model2, iters, args):
+    for epoch in tqdm(range(nbepochs), desc='Train process', leave=False): 
+        # Calculate loss through training
+        PI, loss_Q1, loss_TEMP, _, esv = train_network(
+            model=model1, 
+            history=history, 
+            target_model=target_model1, 
+            model2=model2, 
+            target_model2=target_model2, 
+            iters=iters
+        )
+        
+        # Transfer data from GPU to CPU and convert to numpy array
         PI, loss_Q1, loss_TEMP = PI.detach().cpu().numpy(), loss_Q1.detach().cpu().numpy(), loss_TEMP.detach().cpu().numpy()
-        print('Episode len : ', STOP_POINT, 'PI : ', round(PI.item(),3), 'Q1 : ', round(loss_Q1.item(),3), 'TEMP : ', round(loss_TEMP.item(),3)) #, 'Q2 : ', round(loss_Q2.item(),3)
- 
-        ############### TARGET NETWORK UPDATE
-        if n_epi % args.target_n==0:
+        
+        # Print training information for the current epoch
+        print('Episode len : ', STOP_POINT, 'PI : ', round(PI.item(), 3), 'Q1 : ', round(loss_Q1.item(), 3), 'TEMP : ', round(loss_TEMP.item(), 3))
+        
+        # Update target network at specified epochs
+        if epoch % args.target_n == 0:
             util.target_network(model1, model2, target_model1, target_model2)
 
-        ############### LOSS APPEND
+        # Store loss values
         allloss_train_pi.append(PI)
         allloss_Q1.append(loss_Q1)
         allloss_TEMP.append(loss_TEMP)
 
-        ############### TRAIN LOSS INFO
+        # Print training loss information
         util.loss_info(allloss_train_pi, allloss_Q1, allloss_Q2, allloss_TEMP, iters)
 
-        ############### PLOT
+        # Generate plot
         if args.plt:
             loss_idd_dual.loss_idd(iters)
 
-        ############### EARLY STOP_POINT
-        if args.val_eval: early_stopping_point = esv
-        else: early_stopping_point = -(PI + loss_Q1 + loss_TEMP)
-
+        # Determine whether to perform early stopping
+        early_stopping_point = esv if args.val_eval else -(PI + loss_Q1 + loss_TEMP)
+        
+        # Execute early stopping logic
         FINE_TUNE = early_stopping(early_stopping_point, model1, model2, iters) 
-
         if early_stopping.early_stop:
             print("Early stopping")
+            
+            # Save the models
             torch.save(model1, path + f'/train_dual_network/arXiv/model_0_{iters}.pt')
             torch.save(model2, path + f'/train_dual_network/arXiv/model_1_{iters}.pt')
 
-            ############### VALIDATION EVALUATE
-            validation_data = util.validation_data(args.split)
-            validation_list = [(j, iters) for j in range(len(validation_data))]
-            
-            try:
-                pool = Pool(args.num_process)
-                pool.starmap(evaluate_best_player_val_p.evaluate_best_player, validation_list)
-            finally:
-                pool.close()
-                pool.join()
-                evaluate_best_player_val_p.confusion(iters, True) 
-                
+            # Evaluate model with validation data
+            validation_evaluate(iters)
             break
-
-    ############### MODEL INFO
-    with open(path + '/train_dual_network/model.txt', mode='at',encoding='utf-8') as f:
+    
+    # Write model information
+    with open(path + '/train_dual_network/model.txt', mode='at', encoding='utf-8') as f:
         f.writelines(f'{model1}')
-
 

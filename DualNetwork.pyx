@@ -372,27 +372,8 @@ class ActorCritic(nn.Module):
             'Soft Value': soft_q1_value_error,
             'Temperature': temperature_error
             })
-                       
-        if args.eval:
-            val_es = 0
-            import reward_c
-            from multiprocessing import Pool, freeze_support
-            torch.multiprocessing.set_start_method('spawn', force=True)
-            freeze_support()
-
-            ############### VAL PERFORMANCE
-            if args.val_eval:
-                import evaluate_best_player_val_c
-                pool = Pool(args.num_process)
-                val_data = util.validation_data(args.split)
-                validation_list = [(j, iters) for j in range(len(val_data))]
-                pool.starmap(evaluate_best_player_val_c.evaluate_best_player, validation_list)
-                pool.close()
-                pool.join()
-                val_es =  evaluate_best_player_val_c.confusion()
-                reward_c.plot_acc_val()
-        else:
-            val_es = 0
+        
+        val_es = objective_function
 
         #obj, sopi = objective_function, soft_policy_error
 

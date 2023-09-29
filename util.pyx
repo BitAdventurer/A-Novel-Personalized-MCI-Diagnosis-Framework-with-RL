@@ -131,16 +131,36 @@ def hard_update(source_model, target_model, is_primary_model):
     best_path = args.dualnetwork_best_path if is_primary_model else args.dualnetwork_best2_path
     torch.save(target_model, best_path)
 
-############### TRAIN NETWORK
-def load_data(x,y):
-    history_path = sorted(Path(x).glob('*.history'))[y]
-    with history_path.open(mode='rb') as f:
+from pathlib import Path
+
+def load_data(directory_path, index):
+    """
+    Load training data based on a directory path and an index.
+    
+    Args:
+        directory_path (str): Path to the directory containing training data files.
+        index (int): Index of the training data file to load.
+        
+    Returns:
+        object: Loaded training data.
+    """
+    history_file_path = sorted(Path(directory_path).glob('*.history'))[index]
+    with history_file_path.open(mode='rb') as f:
         return torch.load(f)
 
-############### SELF PLAY
-def self_load_data(x, y):
-    history_path = sorted(Path(x).glob(y))[0]
-    with history_path.open(mode='rb') as f:
+def self_load_data(directory_path, file_pattern):
+    """
+    Load self-play data based on a directory path and a file pattern.
+    
+    Args:
+        directory_path (str): Path to the directory containing self-play data files.
+        file_pattern (str): Pattern to match the required self-play data file.
+        
+    Returns:
+        object: Loaded self-play data.
+    """
+    history_file_path = sorted(Path(directory_path).glob(file_pattern))[0]
+    with history_file_path.open(mode='rb') as f:
         return torch.load(f)
 
 ############### PLOT

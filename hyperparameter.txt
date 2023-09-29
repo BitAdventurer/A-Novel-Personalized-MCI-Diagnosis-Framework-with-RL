@@ -1,9 +1,9 @@
-115
-1
-1
-1e-06
-0.01
-0.99
-0.01
-16
-505
+        stop_point (int): The stopping point for the training.
+        temperature (float): The temperature parameter.
+        sp_game_count (int): The game count parameter for self-play.
+        lr (float): The learning rate.
+        wd (float): The weight decay.
+        momentum (float): The momentum.
+        process_num (int): The number of processes.
+        batch_size (int): The size of the batch.
+        buffer_size (int): The size of the buffer.

@@ -144,7 +144,7 @@ class ActorCritic(nn.Module):
         we = torch.tensor(0.5).to('cuda') if tm else torch.tensor(0.5)
         
         # Normalizing, reshaping, and processing the state through Actor layers to get policy
-        p = F.prelu(self.bnpi(F.normalize(s, dim=1, p=2).reshape(p.size(0), -1)), we)
+        p = F.prelu(self.bnpi(F.normalize(s, dim=1, p=2).reshape(s.size(0), -1)), we)
         p = F.prelu(self.state_pi_bn(self.state_pi(p)), we)
         p = F.prelu(self.fcp_bn1(self.fcp_1(p)), we)
         p = F.prelu(self.fcp_bn2(self.fcp_2(p)), we)
@@ -155,7 +155,7 @@ class ActorCritic(nn.Module):
     ### Temp Function
     def temp(self, s, adj):
         # Normalizing, reshaping, and processing the state through Temp layers to get temperature
-        t = F.normalize(s, dim=1, p=2).reshape(t.size(0), -1)
+        t = F.normalize(s, dim=1, p=2).reshape(s.size(0), -1)
         t = F.relu(self.state_temp_bn(self.state_temp(t)))
         t = F.relu(self.fctemp_bn1(self.fctemp_1(t)))
         t = F.relu(self.fctemp_bn2(self.fctemp_2(t)))

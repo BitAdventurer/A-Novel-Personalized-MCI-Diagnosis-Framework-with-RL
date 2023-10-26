@@ -14,10 +14,7 @@ module_names = [
     "Action_lap",
     "disconnection",
     "disconnection_laplace",
-    "evaluate_best_player_test_p",
-    "evaluate_best_player_test_c",
     "evaluate_best_player_val_p",
-    "evaluate_best_player_val_c",
     "DualNetwork",
     "util",
     "gcn_util"

@@ -27,7 +27,7 @@ import torch.nn.functional as F
 import wandb
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
 from tqdm import tqdm
-
+import evaluate_best_player_val_p
 import config
 import reward
 import seed

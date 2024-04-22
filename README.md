@@ -13,7 +13,7 @@ Additionally, we leverage the learned value function to determine the sparsity l
 We validate the effectiveness of our proposed framework by demonstrating its superior performance in MCI diagnosis on publicly available cohort datasets.
 ### Overview
 <p align="center">
-    <img src="[JBHI]OVERVIEW.png" alt="drawing" width="800"/>
+    <img src="/[JBHI]OVERVIEW.png" alt="drawing" width="800"/>
 </p>
 
 ---

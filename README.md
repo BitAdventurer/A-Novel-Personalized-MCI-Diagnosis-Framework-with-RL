@@ -19,7 +19,7 @@ We validate the effectiveness of our proposed framework by demonstrating its sup
 ---
 ## Requirments 
 - python >= 3.11
-- pytorch >= 2.2
+- pytorch >= 2.2.1
 
 ---
 ## Preparation

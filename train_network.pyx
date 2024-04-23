@@ -42,6 +42,12 @@ torch.set_num_threads(os.cpu_count()*2)
 warnings.filterwarnings("ignore") 
 torch.autograd.set_detect_anomaly(False) 
 torch.cuda.set_device(args.cuda_device)
+# initialize the early_stopping object
+early_stopping = early_stop_dual.EarlyStopping(patience=args.patience, verbose=True, delta=0.0)
+
+allloss_train_pi, allloss_Q1 = [], []
+self_data_append, history, allloss_Q2, allloss_TEMP = [], [], [], []
+STOP_POINT, *_ = util.load_hyperparameter()
 
 def train_network(model, history, target_model, model2, target_model2, iters):
     """
@@ -91,11 +97,6 @@ def train_main(True_result, iters):
     :param true_result: None
     :param iters: Number of iterations
     """
-    # initialize the early_stopping object
-    early_stopping = early_stop_dual.EarlyStopping(patience=args.patience, verbose=True, delta=0.0)
-
-    allloss_train_pi, allloss_Q1 = [], []
-    self_data_append, history, allloss_Q2, allloss_TEMP = [], [], [], []
 
     def load_data(path):
         with Pool(10) as pool:
@@ -109,7 +110,6 @@ def train_main(True_result, iters):
         self_data_append = load_data(path + '/self_play_best_data')
         
     ############### SAMPLING
-    STOP_POINT, *_ = util.load_hyperparameter()
     history = []  # It's assumed that history is a list. Modify as needed if it's another data structure.
     
     def sample_and_extend(data, sample_size):
@@ -185,7 +185,7 @@ def training_process(nbepochs, model1, history, target_model1, model2, target_mo
             torch.save(model2, path + f'/train_dual_network/arXiv/model_1_{iters}.pt')
 
             # Evaluate model with validation data
-            validation_evaluate(iters)
+            evaluate_best_player_val_p(iters)
             break
     
     # Write model information

@@ -31,7 +31,7 @@ Due to storage limitations, we have not attached dataset files in the ```.npy`` 
 Our code can be executed with the configuration file 'train.yaml.' An example run for training the main code is as follows:
 <br>
 ```bash
-python main.py --config=./train.yaml
+pip install -r package.txt
 ```
 ---
   

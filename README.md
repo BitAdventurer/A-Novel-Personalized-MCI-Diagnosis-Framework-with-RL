@@ -24,7 +24,7 @@ We validate the effectiveness of our proposed framework by demonstrating its sup
 ---
 ## Preparation
 Due to storage limitations, we have not attached dataset files in the ```.npy`` format within the library and code files. The datasets used in this study are the ADNI2, ADNI3 and ADNI GO datasets, which can be downloaded from the links below:
-- [ADNI](http://adni.loni.usc.edu)
+- [Alzheimer’s Disease Neuroimaging Initiative(ADNI)](http://adni.loni.usc.edu)
 
 
 ## Usage

@@ -7,52 +7,57 @@ from datetime import datetime
 args = config.parser.parse_args()
 path = args.path
 
+def read_loss_data(file_path):
+    """
+    Reads loss data from a CSV file and handles potential errors.
+    """
+    try:
+        return pd.read_csv(file_path)
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+        return pd.DataFrame()  # Return empty DataFrame if file not found
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return pd.DataFrame()
+
+def plot_loss(data, title, color, subplot_position):
+    """
+    Plots individual loss data on a specific subplot.
+    """
+    if data.empty:
+        print(f"No data to plot for {title}.")
+        return
+
+    plt.subplot(1, 3, subplot_position)
+    plt.title(title)
+    plt.plot(data['0'], label=title, marker='o', lw=2, ls='-', markersize=2, color=color)
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
 
 def loss_idd(c):
     """
     This function plots loss data for Actor, Critic, and Temperature from the given CSV files 
     and saves the plot as a PNG image in the specified path.
-    
-    :param c: Identifier to distinguish between different loss data files and save names.
     """
-
-    # Setup Figure and Subplots
     plt.figure(figsize=(30, 12))
 
     # Plot Actor Loss
-    plt.subplot(1, 3, 1)
-    actor_data = pd.read_csv(path + f'/loss/dual_loss_{c}_pi.csv')
-    plt.title('Actor')
-    plt.plot(actor_data['0'], label='Actor', marker='o', lw=2, ls='-', markersize=2, color='red')
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
+    actor_data = read_loss_data(path + f'/loss/dual_loss_{c}_pi.csv')
+    plot_loss(actor_data, 'Actor', 'red', 1)
 
     # Plot Critic Loss
-    plt.subplot(1, 3, 2)
-    critic_data = pd.read_csv(path + f'/loss/dual_loss_{c}_q1.csv')
-    plt.title('Critic')
-    plt.plot(critic_data['0'], label='Critic', marker='o', lw=2, ls='-', markersize=2, color='green')
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
+    critic_data = read_loss_data(path + f'/loss/dual_loss_{c}_q1.csv')
+    plot_loss(critic_data, 'Critic', 'green', 2)
 
     # Plot Temperature Loss
-    plt.subplot(1, 3, 3)
-    temperature_data = pd.read_csv(path + f'/loss/dual_loss_{c}_temp.csv')
-    plt.title('Temperature')
-    plt.plot(temperature_data['0'], label='Temperature', marker='o', lw=2, ls='-', markersize=2, color='black')
-    plt.legend()
-    plt.grid()
-    plt.tight_layout()
+    temperature_data = read_loss_data(path + f'/loss/dual_loss_{c}_temp.csv')
+    plot_loss(temperature_data, 'Temperature', 'black', 3)
 
-    # Save the Plot as PNG
+    # Save and close
     plt.savefig(path + f'/loss/dual_loss_visual/loss_{c}.png', format='png', dpi=300)
-    
-    # Close the plots and free up memory
-    plt.close('all')
+    plt.close('all')  # Properly close the plot to free up memory
     gc.collect()
-
 
 if __name__ == "__main__":
     identifier = "example"  # Replace with the desired identifier.

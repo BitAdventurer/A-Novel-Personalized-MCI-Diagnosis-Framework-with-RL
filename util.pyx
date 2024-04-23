@@ -32,6 +32,7 @@ import config
 import reward
 import seed
 from Baseline import chev
+import self_play_best
 
 args = config.parser.parse_args()
 seed.seed_everything(args.seed)  

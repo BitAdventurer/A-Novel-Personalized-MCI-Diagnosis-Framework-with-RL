@@ -1,5 +1,5 @@
 # **Sparse Graph Representation Learning based on Reinforcement Learning for Personalized Mild Cognitive Impairment (MCI) Diagnosis**
-This is the **official** PyTorch implementation of "[Sparse Graph Representation Learning based on Reinforcement Learning for Personalized Mild Cognitive Impairment (MCI) Diagnosis](https://https://ieeexplore.ieee.org/document/10509746)", which has been accepted for publication in Biomedical and Health Informatics(JBHI) in 2024.
+This is the **official** PyTorch implementation of "[Sparse Graph Representation Learning based on Reinforcement Learning for Personalized Mild Cognitive Impairment (MCI) Diagnosis](https://ieeexplore.ieee.org/document/10509746)", which has been accepted for publication in Biomedical and Health Informatics(JBHI) in 2024.
 
 
 

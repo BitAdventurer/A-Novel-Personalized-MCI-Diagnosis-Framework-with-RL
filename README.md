@@ -38,14 +38,15 @@ pip install -r package.txt
 ## Citation 
 If you discover value in this content, kindly reference the following article:
 ```bibtex
-@article{Ji2024,
-  title={Sparse Graph Representation Learning based on Reinforcement Learning for Personalized Mild Cognitive Impairment (MCI) Diagnosis},
   author={Ji, Chang-Hoon and Shin, Dong-Hee and Son, Young-Han and Kam, Tae-Eui},
-  journal={Biomedical and Health Informatics(JBHI)},
-  pages={},
+  journal={IEEE Journal of Biomedical and Health Informatics}, 
+  title={Sparse Graph Representation Learning based on Reinforcement Learning for Personalized Mild Cognitive Impairment (MCI) Diagnosis}, 
   year={2024},
-  publisher={}
-}
+  volume={},
+  number={},
+  pages={1-12},
+  keywords={Task analysis;Topology;Brain modeling;Bioinformatics;Supervised learning;Reinforcement learning;Network topology;Reinforcement Learning;Brain Disease Diagnosis;MCI;Functional Connectivity Network},
+  doi={10.1109/JBHI.2024.3393625}}
 ```
 ---
   

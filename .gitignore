@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.python-version
+.venv/
+venv/
+env/
+
+# Cython/build outputs
+build/
+dist/
+*.egg-info/
+.cython_debug/
+*.c
+*.cpp
+*.so
+*.pyd
+*.html
+
+# Local data and generated experiment artifacts
+data/
+baseline/
+result/
+terminal/
+value/
+outputs/
+results/
+logs/
+wandb/
+self_play_backup/
+self_play_best_data/
+train_dual_network/
+*.history
+*.pt
+*.pth
+*.ckpt
+*.npy
+*.npz
+*.mat
+*.csv
+
+# Notebook/editor/system files
+.ipynb_checkpoints/
+.DS_Store
+.idea/
+.vscode/

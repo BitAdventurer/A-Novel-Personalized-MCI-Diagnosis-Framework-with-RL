@@ -1,13 +1,17 @@
-'''
-We used cython to speed up the process.
+"""Build Cython extensions used by the MCI-RL training pipeline.
 
-Enter the command 'python setup.py build_ext --inplace' to cythonize and then run the code.
-'''
-from distutils.core import setup
-from Cython.Build import cythonize
+Run:
+    python setup.py build_ext --inplace
+"""
+
+from pathlib import Path
+
 import numpy as np
+from Cython.Build import cythonize
+from setuptools import Extension, setup
 
-module_names = [
+
+CYTHON_MODULES = [
     "train_network",
     "self_play_best",
     "Action",
@@ -17,12 +21,28 @@ module_names = [
     "evaluate_best_player_val_p",
     "DualNetwork",
     "util",
-    "gcn_util"
+    "gcn_util",
 ]
 
-for module in module_names:
-    setup(
-        description=f"Cythonize {module}",
-        ext_modules=cythonize(f"{module}.pyx"),
-        include_dirs=[np.get_include()]
-    )
+
+def make_extensions():
+    """Create extension definitions only for modules present in the repo."""
+    extensions = []
+    for module_name in CYTHON_MODULES:
+        source = Path(f"{module_name}.pyx")
+        if source.exists():
+            extensions.append(
+                Extension(
+                    module_name,
+                    [str(source)],
+                    include_dirs=[np.get_include()],
+                )
+            )
+    return extensions
+
+
+setup(
+    name="mci-rl-sparse-graph",
+    description="Cython extensions for sparse graph RL-based MCI diagnosis",
+    ext_modules=cythonize(make_extensions(), language_level=3),
+)

@@ -1,0 +1,17 @@
+numpy
+scipy
+scikit-learn
+pandas
+matplotlib
+seaborn
+torch
+Cython
+tqdm
+PyYAML
+wandb
+madgrad
+torch-optimizer
+pytorch-ranger
+termcolor
+dabl
+yaspin

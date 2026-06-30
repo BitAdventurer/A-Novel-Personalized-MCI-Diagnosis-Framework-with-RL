@@ -1,63 +1,121 @@
+"""Shared command-line configuration for the MCI-RL experiments."""
+
 import argparse
 from datetime import datetime
+from pathlib import Path
 
-# Initialize parser
-parser = argparse.ArgumentParser(description='Configuration for the training environment')
 
-# Reading path from a file safely
-try:
-    with open('path.txt', mode='rt', encoding='utf-8') as file:
-        path = file.readline().strip()
-except FileNotFoundError:
-    print("path.txt not found. Ensure the file is in the current directory.")
-    path = ""
+def str2bool(value):
+    """Parse common string forms for boolean command-line flags."""
+    if isinstance(value, bool):
+        return value
+    value = value.lower()
+    if value in {"true", "1", "yes", "y"}:
+        return True
+    if value in {"false", "0", "no", "n"}:
+        return False
+    raise argparse.ArgumentTypeError(f"Invalid boolean value: {value}")
 
-# Timestamp for filenames or logging
+
+def read_default_path(path_file="path.txt"):
+    """Read the local data root from path.txt when it exists."""
+    try:
+        return Path(path_file).read_text(encoding="utf-8").splitlines()[0].strip()
+    except (FileNotFoundError, IndexError):
+        return ""
+
+
+path = read_default_path()
 timestamp = datetime.today().strftime("_%Y%m%d%H%M%S")
 
-# Base Paths
-parser.add_argument("--path", default=path, type=str)
-parser.add_argument("--dualnetwork_best_path", default=f'{path}/train_dual_network/best.pt', type=str)
-parser.add_argument("--dualnetwork_best2_path", default=f'{path}/train_dual_network/best2.pt', type=str)
-parser.add_argument("--dualnetwork_target_path", default=f'{path}/train_dual_network/target.pt', type=str)
-parser.add_argument("--dualnetwork_target2_path", default=f'{path}/train_dual_network/target2.pt', type=str)
-parser.add_argument("--dualnetwork_model_init_path", default=f'{path}/train_dual_network/arXiv/origin.pt', type=str)
-parser.add_argument("--dualnetwork_model_init2_path", default=f'{path}/train_dual_network/arXiv/origin2.pt', type=str)
+parser = argparse.ArgumentParser(
+    description="Configuration for sparse graph RL-based MCI diagnosis"
+)
 
-# Environment Parameters
+# Paths
+parser.add_argument("--path", default=path, type=str, help="Local project/data root")
+parser.add_argument("--dualnetwork_best_path", default=f"{path}/train_dual_network/best.pt", type=str)
+parser.add_argument("--dualnetwork_best2_path", default=f"{path}/train_dual_network/best2.pt", type=str)
+parser.add_argument("--dualnetwork_target_path", default=f"{path}/train_dual_network/target.pt", type=str)
+parser.add_argument("--dualnetwork_target2_path", default=f"{path}/train_dual_network/target2.pt", type=str)
+parser.add_argument("--dualnetwork_model_init_path", default=f"{path}/train_dual_network/arXiv/origin.pt", type=str)
+parser.add_argument("--dualnetwork_model_init2_path", default=f"{path}/train_dual_network/arXiv/origin2.pt", type=str)
+parser.add_argument("--self_data", default=f"{path}/self_play_best_data", type=str)
+parser.add_argument("--buffer_data", default=f"{path}/self_play_backup", type=str)
+parser.add_argument("--best_path", default=f"{path}/self_play_best_data", type=str)
+parser.add_argument("--backup_path", default=f"{path}/self_play_backup", type=str)
+
+# Dataset and split settings
+parser.add_argument("--fold", default=0, type=int)
+parser.add_argument("--split", default=0, type=int)
+parser.add_argument("--n_split", default=5, type=int)
+parser.add_argument("--seed", default=42, type=int)
+parser.add_argument("--dataset_seed", default=42, type=int)
+
+# Environment parameters
 parser.add_argument("--stop_point", default=115, type=int)
-parser.add_argument("--sp_game_count", default=10, type=int)  # Updated with an example default
-parser.add_argument("--num_process", default=1, type=int)    # Updated with an example default
-parser.add_argument("--temperature", default=1, type=int)    # Updated with an example default
+parser.add_argument("--sp_game_count", default=10, type=int)
+parser.add_argument("--num_process", default=1, type=int)
+parser.add_argument("--temperature", default=1.0, type=float)
 parser.add_argument("--action", default=117, type=int)
 parser.add_argument("--reward", default=1.0, type=float)
-parser.add_argument("--seed", default=42, type=int)          # Updated with an example default
-parser.add_argument("--num_epoch", default=10, type=int)     # Updated with an example default
+parser.add_argument("--num_epoch", default=10, type=int)
+parser.add_argument("--state_value", default=False, type=str2bool)
+parser.add_argument("--jeilt", default=False, type=str2bool)
 
-# Training Hyperparameters
+# Training hyperparameters
 parser.add_argument("--lr", default=0.005, type=float)
 parser.add_argument("--batch_size", default=32, type=int)
 parser.add_argument("--wd", default=0.00001, type=float)
 parser.add_argument("--betas", default=(0.9, 0.999), type=tuple)
-parser.add_argument("--momentum", default=0.9, type=float)   # Updated with an example default
+parser.add_argument("--momentum", default=0.9, type=float)
 parser.add_argument("--gamma", default=0.9, type=float)
 parser.add_argument("--discount_factor", default=0.95, type=float)
-parser.add_argument("--epochs", default=100, type=int)       # Updated with an example default
-parser.add_argument("--iters", default=1000, type=int)       # Updated with an example default
+parser.add_argument("--epochs", default=100, type=int)
+parser.add_argument("--iters", default=1000, type=int)
+parser.add_argument("--patience", default=50, type=int)
+parser.add_argument("--sampling_size", default=32, type=int)
+parser.add_argument("--window", default=100, type=int)
+parser.add_argument("--target_n", default=10, type=int)
+parser.add_argument("--soft_update_ratio", default=0.005, type=float)
+parser.add_argument("--target_soft_update_ratio", default=0.005, type=float)
+parser.add_argument("--soft_update", default=True, type=str2bool)
+parser.add_argument("--optimizer", default="Adam", type=str)
+
+# Graph/network dimensions
 parser.add_argument("--k", default=3, type=int)
 parser.add_argument("--in_feature", default=116, type=int)
 parser.add_argument("--out_feature", default=8, type=int)
+parser.add_argument("--state_emb_layer", default=256, type=int)
+parser.add_argument("--action_emb_layer", default=117, type=int)
+parser.add_argument("--actor_layer1", default=128, type=int)
+parser.add_argument("--actor_layer2", default=64, type=int)
+parser.add_argument("--actor_layer", default=117, type=int)
+parser.add_argument("--critic_layer1", default=128, type=int)
+parser.add_argument("--critic_layer2", default=64, type=int)
+parser.add_argument("--critic_layer", default=1, type=int)
+parser.add_argument("--temp_layer1", default=128, type=int)
+parser.add_argument("--temp_layer2", default=64, type=int)
+parser.add_argument("--temp_layer", default=1, type=int)
 
-# Actor-Critic Layers (placeholders for actual default values)
-parser.add_argument("--actor_layer1", default=64, type=int)  # Updated with an example default
-parser.add_argument("--critic_layer1", default=64, type=int)  # Updated with an example default
+# Loss weights and optimization options
+parser.add_argument("--policy", default=1.0, type=float)
+parser.add_argument("--value", default=1.0, type=float)
+parser.add_argument("--temp", default=1.0, type=float)
+parser.add_argument("--target_entropy", default=-1.0, type=float)
+parser.add_argument("--one_hot", default=False, type=str2bool)
+parser.add_argument("--feature", default=True, type=str2bool)
+parser.add_argument("--replay_buffer", default=True, type=str2bool)
+parser.add_argument("--val_eval", default=True, type=str2bool)
+parser.add_argument("--w_clamp", default=False, type=str2bool)
+parser.add_argument("--g_clamp", default=False, type=str2bool)
+parser.add_argument("--g_clamp_v", default=1.0, type=float)
 
-# Buffer and Device Configuration
-parser.add_argument("--buffer_size", default=1000, type=int)  # Updated with an example default
+# Device and logging
+parser.add_argument("--buffer_size", default=1000, type=int)
 parser.add_argument("--cuda_device", default=0, type=int)
+parser.add_argument("--new_server", default="mci-rl", type=str)
+parser.add_argument("--timestamp", default=timestamp, type=str)
+parser.add_argument("--plt", default=False, type=str2bool)
 
-# Optional feature toggles
-parser.add_argument("--feature", default=True, type=bool)
-
-# Parse arguments
 args = parser.parse_args()

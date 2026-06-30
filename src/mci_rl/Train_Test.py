@@ -1,3 +1,5 @@
+"""Create stratified train/validation/test split files from ADNI-derived data."""
+
 import os
 import scipy.io 
 import numpy as np
@@ -14,8 +16,7 @@ from matplotlib.patches import Patch
 from mci_rl import config
 args = config.parser.parse_args()
 
-cmap_data = plt.cm.Paired
-cmap_cv = plt.cm.coolwarm
+CV_CMAP = plt.cm.coolwarm
 
 n_splits = args.n_split
 batch_size = 32
@@ -23,38 +24,35 @@ save_switch = True
 
 sd.seed_everything(args.seed)
 
-# MCI Labeling
 path = args.path
 
-########################################### ORIGINAL
+# Load the original multiscan data and attach one-hot class labels.
 os.chdir(path+'/data/multiscanX/MCI')
 
 original_anomy = []
 original_anomy_meta = []
-# <0,1> 으로 Labeling
+# MCI label: [0, 1]
 for i in range(len(os.listdir())):
     original_mat_mci = scipy.io.loadmat(os.listdir()[i])
     original_anomy_meta.append(os.listdir()[i])
     original_mat_mci = original_mat_mci['ROICorrelation_FisherZ']
     original_anomy.append([[0, 1], original_mat_mci])
 
-# NC Labeling
 os.chdir(path+'/data/multiscanX/NC')
 
 original_normal = []
 original_normal_meta = []
-# <1,0> 으로 Labeling
+# NC label: [1, 0]
 for i in range(len(os.listdir())):
     original_mat_nc = scipy.io.loadmat(os.listdir()[i])
     original_normal_meta.append(os.listdir()[i])
     original_mat_nc = original_mat_nc['ROICorrelation_FisherZ'] # ROICorrelation_FisherZ
     original_normal.append([[1, 0], original_mat_nc])
 
-# date merge
 original_dataset = original_anomy + original_normal
 original_dataset_meta = original_anomy_meta + original_normal_meta
 
-# inf -> 1로 전처리
+# Replace infinite FCN entries before saving split tensors.
 for i in range(len(original_dataset)):
     for j in range(116):
         for k in range(116):
@@ -63,41 +61,38 @@ for i in range(len(original_dataset)):
 
 
 
-# Data, Label 분리
 original_data, original_label = [], []
 for i in range(len(original_dataset)):
     original_data.append(original_dataset[i][1])
     original_label.append(original_dataset[i][0])
 
-########################################### MULTISCAN X
+# Load the multiscan-X cohort used for splitting.
 os.chdir(path+'/data/multiscanX/MCI')
 
 anomy = []
 anomy_meta = []
-# <0,1> 으로 Labeling
+# MCI label: [0, 1]
 for i in range(len(os.listdir())):
     mat_mci = scipy.io.loadmat(os.listdir()[i])
     anomy_meta.append(os.listdir()[i])
     mat_mci = mat_mci['ROICorrelation_FisherZ']
     anomy.append([[0, 1], mat_mci])
 
-# NC Labeling
 os.chdir(path+'/data/multiscanX/NC')
 
 normal = []
 normal_meta = []
-# <1,0> 으로 Labeling
+# NC label: [1, 0]
 for i in range(len(os.listdir())):
     mat_nc = scipy.io.loadmat(os.listdir()[i])
     normal_meta.append(os.listdir()[i])
     mat_nc = mat_nc['ROICorrelation_FisherZ'] # ROICorrelation_FisherZ
     normal.append([[1, 0], mat_nc])
 
-# date merge
 dataset = anomy + normal
 dataset_meta = anomy_meta + normal_meta
 
-# inf -> 1로 전처리
+# Replace infinite FCN entries before creating folds.
 for i in range(len(dataset)):
     for j in range(116):
         for k in range(116):
@@ -105,14 +100,13 @@ for i in range(len(dataset)):
                 dataset[i][1][j][k] = 1
 
 
-# Data, Label 분리
 data, label = [], []
 for i in range(len(dataset)):
     data.append(dataset[i][1])
     label.append(dataset[i][0])
 
 
-########################################### train/test
+# Outer train/test split.
 os.chdir(path)
 cv =  StratifiedShuffleSplit(n_splits=n_splits, test_size=0.2, random_state=args.dataset_seed)  # original_seed = args.seed
 train_set, test_set = [], [] 
@@ -121,18 +115,17 @@ for i, v in cv.split(data, label):
     train_set.append(i) # (3, 336)
     test_set.append(v) # (3,169)
 
-########################################### PLOT
+# Save a visual overview of cross-validation membership.
 fig, ax = plt.subplots(figsize=(15, 8))
 plot_cv.plot_cv_indices(cv, data, label, ax, n_splits)
 
-ax.legend([Patch(color=cmap_cv(.8)), Patch(color=cmap_cv(.2))],
+ax.legend([Patch(color=CV_CMAP(.8)), Patch(color=CV_CMAP(.2))],
             ['Testing set', 'Training set'])
-# Make the legend fit
 plt.tight_layout()
 plt.savefig('cs.png', dpi=300)
 plt.close()
 
-########################################### TEST
+# Persist test split files.
 for idx, split in enumerate(test_set):  # (3,169)
     test, test_label = [], []
     test_meta = []

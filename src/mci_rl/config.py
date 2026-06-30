@@ -1,4 +1,9 @@
-"""Shared command-line configuration for the MCI-RL experiments."""
+"""Command-line configuration shared by the MCI-RL experiment scripts.
+
+The original research code reads most paths and hyperparameters from a global
+``args`` object. Keeping that interface avoids broad changes across the Cython
+modules while still centralizing the available options in one place.
+"""
 
 import argparse
 from datetime import datetime
@@ -19,7 +24,9 @@ def str2bool(value):
 
 def read_default_path():
     """Read the local data root from a repo-level path configuration file."""
-    candidates = (Path("path.txt"), Path("configs/path.txt"))
+    # Keep the old root-level path.txt fallback for compatibility with earlier
+    # clones, while preferring the organized configs/ location.
+    candidates = (Path("configs/path.txt"), Path("path.txt"))
     for path_file in candidates:
         try:
             return path_file.read_text(encoding="utf-8").splitlines()[0].strip()
@@ -28,25 +35,25 @@ def read_default_path():
     return ""
 
 
-path = read_default_path()
-timestamp = datetime.today().strftime("_%Y%m%d%H%M%S")
+DEFAULT_PATH = read_default_path()
+DEFAULT_TIMESTAMP = datetime.today().strftime("_%Y%m%d%H%M%S")
 
 parser = argparse.ArgumentParser(
     description="Configuration for sparse graph RL-based MCI diagnosis"
 )
 
 # Paths
-parser.add_argument("--path", default=path, type=str, help="Local project/data root")
-parser.add_argument("--dualnetwork_best_path", default=f"{path}/train_dual_network/best.pt", type=str)
-parser.add_argument("--dualnetwork_best2_path", default=f"{path}/train_dual_network/best2.pt", type=str)
-parser.add_argument("--dualnetwork_target_path", default=f"{path}/train_dual_network/target.pt", type=str)
-parser.add_argument("--dualnetwork_target2_path", default=f"{path}/train_dual_network/target2.pt", type=str)
-parser.add_argument("--dualnetwork_model_init_path", default=f"{path}/train_dual_network/arXiv/origin.pt", type=str)
-parser.add_argument("--dualnetwork_model_init2_path", default=f"{path}/train_dual_network/arXiv/origin2.pt", type=str)
-parser.add_argument("--self_data", default=f"{path}/self_play_best_data", type=str)
-parser.add_argument("--buffer_data", default=f"{path}/self_play_backup", type=str)
-parser.add_argument("--best_path", default=f"{path}/self_play_best_data", type=str)
-parser.add_argument("--backup_path", default=f"{path}/self_play_backup", type=str)
+parser.add_argument("--path", default=DEFAULT_PATH, type=str, help="Local project/data root")
+parser.add_argument("--dualnetwork_best_path", default=f"{DEFAULT_PATH}/train_dual_network/best.pt", type=str)
+parser.add_argument("--dualnetwork_best2_path", default=f"{DEFAULT_PATH}/train_dual_network/best2.pt", type=str)
+parser.add_argument("--dualnetwork_target_path", default=f"{DEFAULT_PATH}/train_dual_network/target.pt", type=str)
+parser.add_argument("--dualnetwork_target2_path", default=f"{DEFAULT_PATH}/train_dual_network/target2.pt", type=str)
+parser.add_argument("--dualnetwork_model_init_path", default=f"{DEFAULT_PATH}/train_dual_network/arXiv/origin.pt", type=str)
+parser.add_argument("--dualnetwork_model_init2_path", default=f"{DEFAULT_PATH}/train_dual_network/arXiv/origin2.pt", type=str)
+parser.add_argument("--self_data", default=f"{DEFAULT_PATH}/self_play_best_data", type=str)
+parser.add_argument("--buffer_data", default=f"{DEFAULT_PATH}/self_play_backup", type=str)
+parser.add_argument("--best_path", default=f"{DEFAULT_PATH}/self_play_best_data", type=str)
+parser.add_argument("--backup_path", default=f"{DEFAULT_PATH}/self_play_backup", type=str)
 
 # Dataset and split settings
 parser.add_argument("--fold", default=0, type=int)
@@ -118,7 +125,7 @@ parser.add_argument("--g_clamp_v", default=1.0, type=float)
 parser.add_argument("--buffer_size", default=1000, type=int)
 parser.add_argument("--cuda_device", default=0, type=int)
 parser.add_argument("--new_server", default="mci-rl", type=str)
-parser.add_argument("--timestamp", default=timestamp, type=str)
+parser.add_argument("--timestamp", default=DEFAULT_TIMESTAMP, type=str)
 parser.add_argument("--plt", default=False, type=str2bool)
 
 args = parser.parse_args()

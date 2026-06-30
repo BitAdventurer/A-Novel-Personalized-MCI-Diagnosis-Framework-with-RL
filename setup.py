@@ -1,4 +1,4 @@
-"""Build Cython extensions used by the MCI-RL training pipeline.
+"""Build Cython extensions for the MCI-RL training pipeline.
 
 Run:
     python setup.py build_ext --inplace
@@ -26,7 +26,7 @@ CYTHON_MODULES = [
 
 
 def make_extensions():
-    """Create extension definitions only for modules present in the repo."""
+    """Create extension definitions for packaged .pyx modules."""
     extensions = []
     for module_name in CYTHON_MODULES:
         source = Path("src") / "mci_rl" / f"{module_name}.pyx"

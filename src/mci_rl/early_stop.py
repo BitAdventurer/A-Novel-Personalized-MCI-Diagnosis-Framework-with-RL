@@ -5,7 +5,7 @@ import time
 from sklearn.metrics import (
     accuracy_score, confusion_matrix, precision_score, recall_score,
     roc_auc_score, roc_curve, classification_report)
-import config
+from mci_rl import config
 args = config.parser.parse_args()
 
 path = args.path

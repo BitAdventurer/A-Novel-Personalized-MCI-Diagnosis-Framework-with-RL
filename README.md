@@ -14,7 +14,7 @@ Resting-state functional MRI can be represented as a functional connectivity net
 The framework decomposes FCN construction into smaller sub-problems, improves exploration with a divide-and-conquer strategy, and uses the learned value function to determine subject-specific sparsity levels.
 
 <p align="center">
-  <img src="[JBHI]OVERVIEW.png" alt="Sparse graph RL framework overview" width="850"/>
+  <img src="./docs/assets/jbhi-overview.png" alt="Sparse graph RL framework overview" width="850"/>
 </p>
 
 ## ✨ Key Features
@@ -31,24 +31,29 @@ The framework decomposes FCN construction into smaller sub-problems, improves ex
 ```text
 .
 ├── README.md                         # Project documentation
-├── config.py                         # Shared CLI/runtime configuration
 ├── setup.py                          # Cython extension build script
 ├── package.txt                       # Original dependency list
 ├── requirements.txt                  # Curated install list for reproducible setup
-├── path.txt                          # Local project/data root path
-├── Train_Test.py                     # Data split and preprocessing utility
-├── Baseline.py                       # Baseline model entry point
-├── General_baseline.py               # General baseline training pipeline
-├── train_cycle.py                    # Main iterative RL training cycle
-├── train_network.pyx                 # Dual-network training logic
-├── self_play_best.pyx                # Self-play data generation
-├── DualNetwork.pyx                   # Actor-critic style dual network
-├── Action.pyx / Action_lap.pyx       # Action operators
-├── disconnection*.pyx                # Graph disconnection utilities
-├── evaluate_best_player_val_p.pyx    # Validation/evaluation routine
-├── util.pyx / gcn_util.pyx           # Data, model, and graph helpers
-├── loss_idd_*.py                     # Loss visualization/aggregation
-└── early_stop*.py                    # Early stopping helpers
+├── configs/
+│   ├── path.txt                      # Local project/data root path
+│   └── hyperparameter.txt            # Example/default hyperparameter file
+├── docs/
+│   └── assets/                       # Figures used by README/docs
+└── src/
+    └── mci_rl/
+        ├── config.py                 # Shared CLI/runtime configuration
+        ├── Train_Test.py             # Data split and preprocessing utility
+        ├── Baseline.py               # Baseline model entry point
+        ├── General_baseline.py       # General baseline training pipeline
+        ├── train_cycle.py            # Main iterative RL training cycle
+        ├── train_network.pyx         # Dual-network training logic
+        ├── self_play_best.pyx        # Self-play data generation
+        ├── DualNetwork.pyx           # Actor-critic style dual network
+        ├── Action.pyx / Action_lap.pyx
+        ├── disconnection*.pyx
+        ├── evaluate_best_player_val_p.pyx
+        ├── util.pyx / gcn_util.pyx
+        └── early_stop*.py
 ```
 
 ## 🚀 Quick Start
@@ -83,7 +88,7 @@ python setup.py build_ext --inplace
 
 ### 5. Configure local paths
 
-Edit `path.txt` so that the first line points to the local project/data root used by the training scripts.
+Edit `configs/path.txt` so that the first line points to the local project/data root used by the training scripts.
 
 ```text
 /absolute/path/to/project_or_data_root
@@ -95,7 +100,7 @@ The dataset files are not included in this repository because of storage and acc
 
 - [ADNI data portal](http://adni.loni.usc.edu)
 
-The scripts expect preprocessed data and generated fold files under the local root configured in `path.txt`. A typical working directory contains generated folders such as:
+The scripts expect preprocessed data and generated fold files under the local root configured in `configs/path.txt` or `--path`. A typical working directory contains generated folders such as:
 
 ```text
 data/
@@ -123,29 +128,29 @@ python setup.py build_ext --inplace
 ### Generate train/validation/test splits
 
 ```bash
-python Train_Test.py --path /absolute/path/to/project_or_data_root
+PYTHONPATH=src python -m mci_rl.Train_Test --path /absolute/path/to/project_or_data_root
 ```
 
-`Train_Test.py` is a legacy preprocessing utility and assumes that local ADNI-derived input files and plotting helpers are available in the expected locations.
+`mci_rl.Train_Test` is a legacy preprocessing utility and assumes that local ADNI-derived input files are available in the expected locations.
 
 ### Run baseline models
 
 ```bash
-python Baseline.py --path /absolute/path/to/project_or_data_root
-python General_baseline.py --path /absolute/path/to/project_or_data_root
+PYTHONPATH=src python -m mci_rl.Baseline --path /absolute/path/to/project_or_data_root
+PYTHONPATH=src python -m mci_rl.General_baseline --path /absolute/path/to/project_or_data_root
 ```
 
 ### Run the RL training cycle
 
 ```bash
-python train_cycle.py --path /absolute/path/to/project_or_data_root --cuda_device 0
+PYTHONPATH=src python -m mci_rl.train_cycle --path /absolute/path/to/project_or_data_root --cuda_device 0
 ```
 
-Weights, replay buffers, validation outputs, and logs are written under the path configured by `--path` and `path.txt`.
+Weights, replay buffers, validation outputs, and logs are written under the path configured by `--path` and `configs/path.txt`.
 
 ## 🔧 Configuration
 
-Most runtime settings are defined in `config.py` and can be overridden from the command line.
+Most runtime settings are defined in `src/mci_rl/config.py` and can be overridden from the command line.
 
 Common options:
 
@@ -168,7 +173,7 @@ Common options:
 Example:
 
 ```bash
-python train_cycle.py \
+PYTHONPATH=src python -m mci_rl.train_cycle \
   --path /absolute/path/to/project_or_data_root \
   --fold 0 \
   --split 0 \

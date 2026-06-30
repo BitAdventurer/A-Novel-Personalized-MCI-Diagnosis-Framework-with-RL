@@ -17,19 +17,19 @@ from sklearn.metrics import (accuracy_score, confusion_matrix, classification_re
                              roc_curve)
 from tqdm import tqdm
 
-import disconnection
-import disconnection_laplace
-import gcn_util
-import seed
-import util
+from mci_rl import disconnection
+from mci_rl import disconnection_laplace
+from mci_rl import gcn_util
+from mci_rl import seed
+from mci_rl import util
 import wandb
-from DualNetwork import ActorCritic
-from General_baseline import chev
+from mci_rl.DualNetwork import ActorCritic
+from mci_rl.General_baseline import chev
 
 import pyximport; pyximport.install()
 
 warnings.filterwarnings("ignore") 
-import config
+from mci_rl import config
 
 args  = config.parser.parse_args()
 now   = datetime.now()

@@ -2,9 +2,9 @@ import pyximport; pyximport.install()
 
 import random
 import torch
-import config
-import util
-import Action
+from mci_rl import config
+from mci_rl import util
+from mci_rl import Action
 
 # Fetching arguments and selection version from configuration and Action module
 args = config.parser.parse_args()

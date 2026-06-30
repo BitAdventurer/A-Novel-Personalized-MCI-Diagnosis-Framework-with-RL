@@ -12,9 +12,9 @@ from multiprocessing import Pool, freeze_support
 from pathlib import Path
 from pprint import pprint
 
-import disconnection
-import disconnection_laplace
-import gcn_util
+from mci_rl import disconnection
+from mci_rl import disconnection_laplace
+from mci_rl import gcn_util
 import graphviz
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -27,12 +27,12 @@ import torch.nn.functional as F
 import wandb
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
 from tqdm import tqdm
-import evaluate_best_player_val_p
-import config
-import reward
-import seed
-from Baseline import chev
-import self_play_best
+from mci_rl import evaluate_best_player_val_p
+from mci_rl import config
+from mci_rl import reward
+from mci_rl import seed
+from mci_rl.Baseline import chev
+from mci_rl import self_play_best
 
 args = config.parser.parse_args()
 seed.seed_everything(args.seed)  

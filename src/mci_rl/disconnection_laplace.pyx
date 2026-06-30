@@ -3,9 +3,9 @@ pyximport.install()
 
 import random
 import torch
-import config
-import util
-import Action_lap
+from mci_rl import config
+from mci_rl import util
+from mci_rl import Action_lap
 
 # Fetching arguments and selection version from configuration and Action_lap module
 args = config.parser.parse_args()

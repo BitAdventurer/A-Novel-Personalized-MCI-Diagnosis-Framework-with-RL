@@ -7,11 +7,11 @@ from torch.utils.data import DataLoader # 데이터로더
 import torch
 import pyximport; pyximport.install()
 from pathlib import Path
-import seed as sd
-import plot_cv
+from mci_rl import seed as sd
+from mci_rl import plot_cv
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
-import config
+from mci_rl import config
 args = config.parser.parse_args()
 
 cmap_data = plt.cm.Paired

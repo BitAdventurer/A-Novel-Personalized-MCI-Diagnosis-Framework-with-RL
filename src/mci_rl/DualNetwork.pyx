@@ -13,9 +13,9 @@ from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader  # 데이터로더
 from torch.utils.data import TensorDataset  # 텐서데이터셋
 import wandb
-import config
-import gcn_util
-import util
+from mci_rl import config
+from mci_rl import gcn_util
+from mci_rl import util
 
 import pyximport; pyximport.install()
 torch.autograd.set_detect_anomaly(True)
@@ -382,7 +382,7 @@ if __name__ == "__main__":
     torch.multiprocessing.set_start_method('spawn', force=True)
     
     # Import and set a random seed for reproducibility.
-    import seed
+    from mci_rl import seed
     seed.seed_everything(args.seed)
     
     # Call freeze_support to allow the script to be frozen (converted into a standalone executable).
@@ -393,8 +393,9 @@ if __name__ == "__main__":
     net_x = ActorCritic(in_features=args.in_feature, out_features=args.out_feature, K=args.k, weight_init='xavier')
     net_k = ActorCritic(in_features=args.in_feature, out_features=args.out_feature, K=args.k, weight_init='kaiming')
     
-    # Write the current working directory to a file named 'path.txt'.
-    with open('path.txt', mode='wt', encoding='utf-8') as f:
+    # Write the current working directory to the repo-level path config.
+    os.makedirs('configs', exist_ok=True)
+    with open('configs/path.txt', mode='wt', encoding='utf-8') as f:
         f.writelines('{}'.format(os.getcwd()))
     
     # Define the path where the models will be saved.

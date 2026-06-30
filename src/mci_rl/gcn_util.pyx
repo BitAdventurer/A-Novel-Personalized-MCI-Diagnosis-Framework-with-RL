@@ -5,8 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 import numpy as np
-import seed
-import config
+from mci_rl import seed
+from mci_rl import config
 args = config.parser.parse_args()
 
 seed.seed_everything(args.seed)

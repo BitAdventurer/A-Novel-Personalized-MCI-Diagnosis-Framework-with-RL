@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import ast
 
-import config
+from mci_rl import config
 args = config.parser.parse_args()
 path = args.path
 

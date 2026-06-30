@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import config
+from mci_rl import config
 
 # Configure the script parameters
 args = config.parser.parse_args()

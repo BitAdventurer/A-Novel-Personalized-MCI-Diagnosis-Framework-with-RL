@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import config
+from mci_rl import config
 import gc
 from datetime import datetime
 

@@ -5,13 +5,13 @@ from tqdm import tqdm
 import warnings
 
 # Custom module imports
-import config
-import util
-import seed
-import train_network
-import loss_idd_dual
-import early_stop_dual_main
-import evaluate_best_player_val_p
+from mci_rl import config
+from mci_rl import util
+from mci_rl import seed
+from mci_rl import train_network
+from mci_rl import loss_idd_dual
+from mci_rl import early_stop_dual_main
+from mci_rl import evaluate_best_player_val_p
 from multiprocessing import freeze_support
 import wandb
 

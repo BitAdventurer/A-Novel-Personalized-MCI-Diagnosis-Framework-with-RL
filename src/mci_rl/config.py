@@ -17,12 +17,15 @@ def str2bool(value):
     raise argparse.ArgumentTypeError(f"Invalid boolean value: {value}")
 
 
-def read_default_path(path_file="path.txt"):
-    """Read the local data root from path.txt when it exists."""
-    try:
-        return Path(path_file).read_text(encoding="utf-8").splitlines()[0].strip()
-    except (FileNotFoundError, IndexError):
-        return ""
+def read_default_path():
+    """Read the local data root from a repo-level path configuration file."""
+    candidates = (Path("path.txt"), Path("configs/path.txt"))
+    for path_file in candidates:
+        try:
+            return path_file.read_text(encoding="utf-8").splitlines()[0].strip()
+        except (FileNotFoundError, IndexError):
+            continue
+    return ""
 
 
 path = read_default_path()

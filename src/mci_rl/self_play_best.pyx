@@ -2,9 +2,9 @@ import os
 import numpy as np
 import torch
 import warnings
-import config
+from mci_rl import config
 import time
-import util
+from mci_rl import util
 from pathlib import Path
 
 warnings.filterwarnings("ignore")

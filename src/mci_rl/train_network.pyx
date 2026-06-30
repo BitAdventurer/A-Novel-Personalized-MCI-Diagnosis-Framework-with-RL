@@ -7,15 +7,15 @@ import torch
 import torch.nn
 from tqdm import tqdm
 
-import config
-import early_stop_dual
-import evaluate_best_player_val_p
-import loss_idd_dual
-import seed
-import util
+from mci_rl import config
+from mci_rl import early_stop_dual
+from mci_rl import evaluate_best_player_val_p
+from mci_rl import loss_idd_dual
+from mci_rl import seed
+from mci_rl import util
 import wandb
-from Baseline import chev
-from DualNetwork import ActorCritic
+from mci_rl.Baseline import chev
+from mci_rl.DualNetwork import ActorCritic
 
 import pyximport; pyximport.install() 
 

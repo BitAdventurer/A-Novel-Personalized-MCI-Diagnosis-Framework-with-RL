@@ -18,13 +18,13 @@ from sklearn.metrics import (
 from torch.autograd import Variable
 
 # Local module imports
-import config
-import disconnection
-import disconnection_laplace
-import gcn_util
-import seed
-import util
-from General_baseline import chev
+from mci_rl import config
+from mci_rl import disconnection
+from mci_rl import disconnection_laplace
+from mci_rl import gcn_util
+from mci_rl import seed
+from mci_rl import util
+from mci_rl.General_baseline import chev
 
 # Parse Arguments
 args = config.parser.parse_args()

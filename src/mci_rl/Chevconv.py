@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import math
-import gcn_util
+from mci_rl import gcn_util
 
 def chev_conv(self, x, adj_orig):
     torch.cuda.empty_cache()  # Clearing CUDA cache, if necessary

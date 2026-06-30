@@ -7,12 +7,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 from sklearn.metrics import confusion_matrix
-from early_stop import EarlyStopping
-import gcn_util
-import config
-import util
-import seed
-import loss_idd_baseline
+from mci_rl.early_stop import EarlyStopping
+from mci_rl import gcn_util
+from mci_rl import config
+from mci_rl import util
+from mci_rl import seed
+from mci_rl import loss_idd_baseline
 import madgrad
 
 args = config.parser.parse_args()

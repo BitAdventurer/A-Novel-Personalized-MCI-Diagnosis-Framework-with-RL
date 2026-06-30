@@ -6,6 +6,7 @@ matplotlib
 seaborn
 torch
 Cython
+graphviz
 tqdm
 PyYAML
 wandb

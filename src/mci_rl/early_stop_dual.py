@@ -1,11 +1,11 @@
 import numpy as np
-import config
+from mci_rl import config
 import torch
-import util
+from mci_rl import util
 from datetime import datetime
 from multiprocessing import Pool, freeze_support
-import evaluate_best_player_test_p
-import seed
+# Optional legacy test evaluator is not included in this release.
+from mci_rl import seed
 args = config.parser.parse_args()
 
 path                    = args.path

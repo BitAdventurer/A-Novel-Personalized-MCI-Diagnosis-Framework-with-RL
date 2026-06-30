@@ -14,7 +14,7 @@ Resting-state functional MRI can be represented as a functional connectivity net
 The framework decomposes FCN construction into smaller sub-problems, improves exploration with a divide-and-conquer strategy, and uses the learned value function to determine subject-specific sparsity levels.
 
 <p align="center">
-  <img src="./[JBHI]OVERVIEW.png" alt="Sparse graph RL framework overview" width="850"/>
+  <img src="[JBHI]OVERVIEW.png" alt="Sparse graph RL framework overview" width="850"/>
 </p>
 
 ## ✨ Key Features
